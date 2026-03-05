@@ -116,6 +116,15 @@ async function startServer() {
     // API Routes
     app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+    app.get("/api/health", async (req, res) => {
+      try {
+        await query("SELECT 1");
+        res.json({ status: "ok", database: "connected", env: process.env.NODE_ENV });
+      } catch (e: any) {
+        res.status(500).json({ status: "error", database: e.message });
+      }
+    });
+
     app.post("/api/admin/upload-video", authenticate, (req: any, res, next) => {
       console.log('Iniciando upload de vídeo...');
       upload.single("video")(req, res, (err) => {
@@ -647,13 +656,16 @@ async function startServer() {
 
     return app;
   } catch (error) {
-    console.error("Failed to start server:", error);
-    if (process.env.NODE_ENV !== "production") {
-      process.exit(1);
-    }
+    console.error("Failed to initialize server:", error);
+    // In production we don't want to kill the process necessarily
     throw error;
   }
 }
 
-export default startServer().then(app => app);
+// Ensure the app exports correctly for Vercel
+const appPromise = startServer();
+export default async (req: any, res: any) => {
+  const app = await appPromise;
+  return app(req, res);
+};
 export { startServer };
