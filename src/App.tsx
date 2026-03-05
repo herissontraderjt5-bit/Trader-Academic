@@ -787,37 +787,6 @@ function SignalsView({ token, user }: { token: string, user: User }) {
   const handleManualGenerate = async () => {
     setIsGenerating(true);
     try {
-      let reasoning = "Análise técnica baseada em indicadores de tendência e volume.";
-      try {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-        if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
-          throw new Error("Chave VITE_GEMINI_API_KEY ausente ou inválida no arquivo .env");
-        }
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${selectedAsset} no mercado de ${marketFilter}.
-        
-        Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
-        1. Smart Money Concepts (SMC): Identifique Order Blocks, captação de Liquidez e quebra de estrutura.
-        2. Price Action e Fibo: Analise os movimentos de preço puros, retrações e expansões de Fibonacci.
-        3. Divergências: Identifique claramente divergências de topos e fundos.
-        4. Volume: Confirme o movimento esperado baseado no volume financeiro.
-        5. ${marketFilter === 'BINARY' ? 'Justificativa focada em tempo gráfico (Horário)' : 'Justificativa focada em região de preço'}.
-
-        IMPORTANTE: No final da sua resposta, forneça OBRIGATORIAMENTE um resumo direto e simples (1 frase) explicando o motivo exato de termos um sinal de COMPRA ou VENDA.
-        
-        Responda em português, de forma técnica, convincente e em no máximo 3 a 4 parágrafos curtos.`;
-        const aiResponse = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt,
-        });
-        if (aiResponse.text) {
-          reasoning = aiResponse.text;
-        }
-      } catch (e: any) {
-        console.error('Gemini Error:', e);
-        reasoning = `[ERRO NA IA]: ${e.message || 'Falha ao conectar na API do Gemini. Verifique a chave no .env'}`;
-      }
-
       const res = await fetch('/api/signals/generate', {
         method: 'POST',
         headers: {
@@ -827,8 +796,7 @@ function SignalsView({ token, user }: { token: string, user: User }) {
         body: JSON.stringify({
           asset: selectedAsset,
           market: marketFilter,
-          is_otc: false,
-          reasoning
+          is_otc: false
         })
       });
       if (res.ok) {
