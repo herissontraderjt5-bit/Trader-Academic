@@ -76,7 +76,7 @@ async function initDB() {
   console.log("Initializing database connection...");
   try {
     await query("SELECT 1");
-    await pool.query("SET search_path TO trader, public");
+    await query("SET search_path TO trader, public");
 
     const freePlanResult = await query("SELECT id FROM trader.plans WHERE name = 'Plano Free' LIMIT 1");
     freePlanId = freePlanResult.rows[0]?.id || null;
