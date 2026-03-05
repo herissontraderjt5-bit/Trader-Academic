@@ -189,7 +189,7 @@ async function startServer() {
         // Generate AI reasoning if API key is present
         const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-        if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY") && !apiKey.includes("AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8")) {
+        if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY")) {
           let attempts = 0;
           const maxAttempts = 2;
 
@@ -202,7 +202,7 @@ async function startServer() {
               Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
               1. Smart Money Concepts (SMC): Identifique Order Blocks, captação de Liquidez e quebra de estrutura.
               2. Price Action e Fibo: Analise os movimentos de preço puros, retrações e expansões de Fibonacci.
-              3. Divergências: Identifique claramente divergências de topos e fundos.
+              3. Divergências e Indicadores: Identifique claramente divergências de topos e fundos e use indicadores técnicos (RSI, Médias Móveis, Volume) para confirmar.
               4. Volume: Confirme o movimento esperado baseado no volume financeiro.
               5. ${market === 'BINARY' ? 'Justificativa focada em tempo gráfico (Horário)' : 'Justificativa focada em região de preço'}.
 

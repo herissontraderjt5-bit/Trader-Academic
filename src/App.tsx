@@ -800,7 +800,8 @@ function SignalsView({ token, user }: { token: string, user: User }) {
         })
       });
       if (res.ok) {
-        // Signal will come via WebSocket
+        const newSignal = await res.json();
+        setSignals([newSignal]);
       }
     } catch (e) {
       console.error('Error generating signal:', e);
