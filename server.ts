@@ -11,7 +11,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-dotenv.config();
+const isVercel = process.env.VERCEL === '1';
+if (!isVercel) {
+  dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,11 +32,13 @@ const pool = new Pool({
 // Helper: run a query
 const query = (text: string, params?: any[]) => pool.query(text, params);
 
-// Ensure uploads directory exists
-const uploadDir = path.join(process.cwd(), "uploads");
+// Ensure uploads directory exists (use /tmp on Vercel)
+const uploadDir = isVercel ? "/tmp/uploads" : path.join(process.cwd(), "uploads");
 const videoDir = path.join(uploadDir, "videos");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-if (!fs.existsSync(videoDir)) fs.mkdirSync(videoDir, { recursive: true });
+if (!isVercel) {
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  if (!fs.existsSync(videoDir)) fs.mkdirSync(videoDir, { recursive: true });
+}
 
 // Configure Multer
 const storage = multer.diskStorage({
@@ -77,21 +82,18 @@ async function startServer() {
     }
 
     const app = express();
-    const server = createServer(app);
-    const wss = new WebSocketServer({ server });
-    console.log("WebSocket server initialized.");
+    const server = isVercel ? null : createServer(app);
+    const wss = isVercel ? null : new WebSocketServer({ server: server! });
+    if (wss) {
+      console.log("WebSocket server initialized.");
+    }
 
     app.use(express.json({ limit: '4gb' }));
     app.use(express.urlencoded({ extended: true, limit: '4gb' }));
 
-    // Clear signals on startup
-    try {
-      await query("DELETE FROM trader.signals");
-    } catch (e) {
-      console.error("Error clearing signals:", e);
-    }
-
+    // Helper to broadcast signals
     const broadcastSignal = (signal: any) => {
+      if (!wss) return;
       const message = JSON.stringify({ type: 'NEW_SIGNAL', data: signal });
       wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -213,12 +215,14 @@ async function startServer() {
       try {
         await query("DELETE FROM trader.signals");
         // Notify all clients to clear their signals
-        const message = JSON.stringify({ type: 'CLEAR_SIGNALS' });
-        wss.clients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(message);
-          }
-        });
+        if (wss) {
+          const message = JSON.stringify({ type: 'CLEAR_SIGNALS' });
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(message);
+            }
+          });
+        }
         res.json({ success: true });
       } catch (e) {
         res.status(500).json({ error: "Erro ao limpar sinais" });
@@ -648,8 +652,8 @@ async function startServer() {
     }
 
     const PORT = parseInt(process.env.PORT || "3000");
-    if (process.env.NODE_ENV !== "production") {
-      server.listen(PORT, "0.0.0.0", () => {
+    if (!isVercel && process.env.NODE_ENV !== "production") {
+      server?.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on http://localhost:${PORT}`);
       });
     }
