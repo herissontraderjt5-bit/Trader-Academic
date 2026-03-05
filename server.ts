@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { createServer } from "http";
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
@@ -187,7 +187,7 @@ async function startServer() {
 
       if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY") && !apiKey.includes("AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8")) {
         try {
-          const genAI = new GoogleGenAI(apiKey);
+          const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
           const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
           
