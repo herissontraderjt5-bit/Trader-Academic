@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { createServer } from "http";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/generative-ai";
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
@@ -184,10 +184,11 @@ async function startServer() {
 
       // Generate AI reasoning if API key is present
       const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-      if (apiKey && apiKey !== "AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8") {
+
+      if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY") && !apiKey.includes("AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8")) {
         try {
-          const ai = new GoogleGenAI({ apiKey });
-          const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const genAI = new GoogleGenAI(apiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
           const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
           
           Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
