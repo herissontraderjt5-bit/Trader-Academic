@@ -191,12 +191,16 @@ async function startServer() {
 
         if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY")) {
           let attempts = 0;
-          const maxAttempts = 2;
+          const maxAttempts = 3;
 
           while (attempts < maxAttempts) {
             try {
               const genAI = new GoogleGenerativeAI(apiKey);
-              const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+              const modelName = attempts === 2 ? "gemini-1.5-pro" : "gemini-1.5-flash";
+              const model = genAI.getGenerativeModel({ model: modelName });
+
+              console.log(`[GENERATOR] Tentativa AI ${attempts + 1} usando ${modelName}...`);
+
               const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
               
               Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
@@ -208,13 +212,14 @@ async function startServer() {
 
               IMPORTANTE: No final da sua resposta, forneça OBRIGATORIAMENTE um resumo direto e simples (1 frase) explicando o motivo exato de termos um sinal de COMPRA ou VENDA.
               
-              Responda em português, de forma técnica, convincente e em no máximo 3 a 4 parágrafos curtos.`;
+              Responda em português, de forma técnica, convincente e em no máximo 1500 caracteres, divididos em 3 a 4 parágrafos curtos.`;
 
               const result = await model.generateContent(prompt);
               const response = await result.response;
               const text = response.text();
               if (text) {
                 reasoning = text;
+                console.log(`[GENERATOR] AI respondida com sucesso na tentativa ${attempts + 1}`);
                 break; // Success!
               }
             } catch (e: any) {
@@ -223,7 +228,8 @@ async function startServer() {
               if (attempts >= maxAttempts) {
                 reasoning = `[AVISO]: O Google está com alta demanda agora (Erro 503). O sinal foi gerado tecnicamente, mas a análise detalhada falhou. Tente novamente em alguns segundos.`;
               } else {
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const backoff = attempts * 3000; // 3s, 6s
+                await new Promise(resolve => setTimeout(resolve, backoff));
               }
             }
           }
