@@ -186,28 +186,43 @@ async function startServer() {
       const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
       if (apiKey && !apiKey.includes("MY_GEMINI_API_KEY") && !apiKey.includes("AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8")) {
-        try {
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
-          
-          Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
-          1. Smart Money Concepts (SMC): Identifique Order Blocks, captação de Liquidez e quebra de estrutura.
-          2. Price Action e Fibo: Analise os movimentos de preço puros, retrações e expansões de Fibonacci.
-          3. Divergências: Identifique claramente divergências de topos e fundos.
-          4. Volume: Confirme o movimento esperado baseado no volume financeiro.
-          5. ${market === 'BINARY' ? 'Justificativa focada em tempo gráfico (Horário)' : 'Justificativa focada em região de preço'}.
+        let attempts = 0;
+        const maxAttempts = 2;
 
-          IMPORTANTE: No final da sua resposta, forneça OBRIGATORIAMENTE um resumo direto e simples (1 frase) explicando o motivo exato de termos um sinal de COMPRA ou VENDA.
-          
-          Responda em português, de forma técnica, convincente e em no máximo 3 a 4 parágrafos curtos.`;
+        while (attempts < maxAttempts) {
+          try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+            const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
+            
+            Sua análise DEVE incluir os seguintes critérios obrigatoriamente:
+            1. Smart Money Concepts (SMC): Identifique Order Blocks, captação de Liquidez e quebra de estrutura.
+            2. Price Action e Fibo: Analise os movimentos de preço puros, retrações e expansões de Fibonacci.
+            3. Divergências: Identifique claramente divergências de topos e fundos.
+            4. Volume: Confirme o movimento esperado baseado no volume financeiro.
+            5. ${market === 'BINARY' ? 'Justificativa focada em tempo gráfico (Horário)' : 'Justificativa focada em região de preço'}.
 
-          const result = await model.generateContent(prompt);
-          const response = await result.response;
-          reasoning = response.text();
-        } catch (e: any) {
-          console.error("Gemini AI Error:", e);
-          reasoning = `[AVISO]: O sinal foi gerado tecnicamente, mas a análise detalhada da IA falhou: ${e.message}`;
+            IMPORTANTE: No final da sua resposta, forneça OBRIGATORIAMENTE um resumo direto e simples (1 frase) explicando o motivo exato de termos um sinal de COMPRA ou VENDA.
+            
+            Responda em português, de forma técnica, convincente e em no máximo 3 a 4 parágrafos curtos.`;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+            if (text) {
+              reasoning = text;
+              break; // Success!
+            }
+          } catch (e: any) {
+            attempts++;
+            console.error(`Gemini Attempt ${attempts} failed:`, e.message);
+            if (attempts >= maxAttempts) {
+              reasoning = `[AVISO]: O Google está com alta demanda agora (Erro 503). O sinal foi gerado tecnicamente, mas a análise detalhada falhou. Tente novamente em alguns segundos.`;
+            } else {
+              // Wait a bit before retry
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
         }
       }
 
