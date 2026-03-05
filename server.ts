@@ -186,7 +186,7 @@ async function startServer() {
       const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (apiKey && apiKey !== "AIzaSyAU-vZoWMzcBj6ZzkaOHlMXD6RRqlpF6t8") {
         try {
-          const ai = new GoogleGenAI(apiKey);
+          const ai = new GoogleGenAI({ apiKey });
           const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
           const prompt = `Como um analista sênior de trading institucional, forneça uma operação no ativo ${asset} no mercado de ${market}.
           
