@@ -638,15 +638,22 @@ async function startServer() {
       });
     }
 
-    const PORT = 3000;
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-    console.log("Server listen called.");
+    const PORT = parseInt(process.env.PORT || "3000");
+    if (process.env.NODE_ENV !== "production") {
+      server.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    }
+
+    return app;
   } catch (error) {
     console.error("Failed to start server:", error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== "production") {
+      process.exit(1);
+    }
+    throw error;
   }
 }
 
-startServer();
+export default startServer().then(app => app);
+export { startServer };
