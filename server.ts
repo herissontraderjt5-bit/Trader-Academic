@@ -20,15 +20,29 @@ const __dirname = path.dirname(__filename);
 const JWT_SECRET = process.env.JWT_SECRET || "trader-secret-key-2024";
 
 // PostgreSQL pool using Supabase
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('supabase.com')
-    ? { rejectUnauthorized: false }
-    : false
-});
+let pool: Pool | null = null;
+const getPool = () => {
+  if (!pool) {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      console.error("DATABASE_URL is not defined in environment variables!");
+      throw new Error("Configuração do Banco de Dados ausente (DATABASE_URL). Verifique o painel da Vercel.");
+    }
+    console.log("Creating new database pool...");
+    pool = new Pool({
+      connectionString: dbUrl,
+      ssl: dbUrl.includes('supabase.com')
+        ? { rejectUnauthorized: false }
+        : false
+    });
+  }
+  return pool;
+};
 
 // Helper: run a query
-const query = (text: string, params?: any[]) => pool.query(text, params);
+const query = (text: string, params?: any[]) => {
+  return getPool().query(text, params);
+};
 
 // Ensure uploads directory exists (use /tmp on Vercel)
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(process.cwd(), "uploads");
