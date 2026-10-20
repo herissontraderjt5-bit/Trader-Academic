@@ -1,3 +1,4 @@
+import { CandleXWorkstation } from './components/CandleXWorkstation';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -316,7 +317,7 @@ export default function App() {
           <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
             <NavItem active={view === 'dashboard'} icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => { setView('dashboard'); setIsMenuOpen(false); }} />
             <NavItem active={view === 'courses'} icon={<BookOpen size={20} />} label="Meus Cursos" onClick={() => { setView('courses'); setIsMenuOpen(false); }} />
-            <NavItem active={view === 'signals'} icon={<Zap size={20} />} label="Sinais IA" onClick={() => { setView('signals'); setIsMenuOpen(false); }} />
+            <NavItem active={view === 'signals'} icon={<Zap size={20} />} label="CandleX IA" onClick={() => { setView('signals'); setIsMenuOpen(false); }} />
             <NavItem active={view === 'calendar'} icon={<Calendar size={20} />} label="Calendário" onClick={() => { setView('calendar'); setIsMenuOpen(false); }} />
             <NavItem active={view === 'profile'} icon={<User size={20} />} label="Meu Perfil" onClick={() => { setView('profile'); setIsMenuOpen(false); }} />
             <NavItem active={view === 'referral'} icon={<Share2 size={20} />} label="Indique e Ganhe" onClick={() => { setView('referral'); setIsMenuOpen(false); }} />
