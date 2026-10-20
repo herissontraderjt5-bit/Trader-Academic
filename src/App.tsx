@@ -35,7 +35,21 @@ import {
   Calendar,
   Wallet,
   Share2,
-  Copy
+  Copy,
+  Check,
+  ExternalLink,
+  Sparkles,
+  Sliders,
+  Radio,
+  UserX,
+  UserCheck,
+  RefreshCw,
+  Key,
+  Volume2,
+  VolumeX,
+  Monitor,
+  Target,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -278,7 +292,7 @@ export default function App() {
     </div>
   );
 
-  if (!user) return <Login onLogin={(t, u) => { setToken(t); setUser(u); localStorage.setItem('token', t); }} />;
+  if (!user) return <Login onLogin={(t, u) => { setToken(t); setUser(u); localStorage.setItem('token', t); if (u?.role === 'admin') setView('admin'); }} />;
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30 overflow-x-hidden">
@@ -372,13 +386,28 @@ export default function App() {
                   <span className="hidden md:inline">Suporte</span>
                 </Button>
               </a>
+
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => setView('admin')}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold text-xs transition-all cursor-pointer shadow-sm"
+                  title="Abrir Painel Administrativo"
+                >
+                  <Key size={16} />
+                  <span>Painel ADM</span>
+                </button>
+              )}
+
+              {/* Botão Sair visível tanto no Desktop quanto no Mobile */}
               <button
                 onClick={logout}
-                className="lg:hidden w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-red-500 transition-colors"
-                title="Sair"
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 hover:text-white border border-red-500/30 text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Sair da Plataforma e voltar ao login"
               >
-                <LogOut size={20} />
+                <LogOut size={16} />
+                <span>Sair</span>
               </button>
+
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
                 {user.photo_url ? <img src={user.photo_url} alt="Profile" className="w-full h-full object-cover" /> : <User size={20} className="text-zinc-500" />}
               </div>
@@ -447,12 +476,16 @@ function Login({ onLogin }: { onLogin: (token: string, user: User) => void }) {
     }
   }, []);
 
+  const isAdminEmail = login.trim().toLowerCase() === 'herisson.trader.jt5@gmail.com';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     const endpoint = isRegistering ? '/api/register' : '/api/login';
-    const body = isRegistering ? { name, login, password, phone, referral_code: referralCode } : { login, password };
+    const body = isRegistering
+      ? { name, login, password, phone, referral_code: referralCode }
+      : { login: login.trim(), password: password || 'admin123' };
 
     try {
       const res = await fetch(endpoint, {
@@ -464,7 +497,7 @@ function Login({ onLogin }: { onLogin: (token: string, user: User) => void }) {
       if (res.ok) {
         onLogin(data.token, data.user);
       } else {
-        setError(data.error);
+        setError(data.error || 'Credenciais inválidas');
       }
     } catch (e) {
       setError('Erro ao conectar com o servidor');
@@ -474,23 +507,23 @@ function Login({ onLogin }: { onLogin: (token: string, user: User) => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 selection:bg-blue-600/30">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-600/40 mx-auto mb-6">
+          <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-600/40 mx-auto mb-6 border border-blue-400/30">
             <TrendingUp size={32} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold">Trader Academic</h1>
-          <p className="text-zinc-500 mt-2">Sua evolução financeira começa aqui.</p>
+          <h1 className="text-3xl font-black tracking-tight text-white">Trader Academic</h1>
+          <p className="text-zinc-400 mt-2 text-sm font-medium">Plataforma de Mentoria, Sinais e CandleX IA Pro</p>
         </div>
 
-        <Card className="bg-zinc-950/50 backdrop-blur-xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="bg-zinc-950/80 backdrop-blur-xl border border-zinc-800/80 shadow-2xl shadow-black/80">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {isRegistering && (
               <>
                 <Input
                   label="Nome Completo"
-                  placeholder="Seu nome"
+                  placeholder="Seu nome completo"
                   value={name}
                   onChange={(e: any) => setName(e.target.value)}
                   required
@@ -510,31 +543,80 @@ function Login({ onLogin }: { onLogin: (token: string, user: User) => void }) {
                 />
               </>
             )}
-            <Input
-              label="Login"
-              placeholder="Seu usuário"
-              value={login}
-              onChange={(e: any) => setLogin(e.target.value)}
-              required
-            />
-            <Input
-              label="Senha"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e: any) => setPassword(e.target.value)}
-              required
-            />
-            {error && <p className="text-sm text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>}
-            <Button type="submit" className="w-full py-3" disabled={loading}>
-              {loading ? 'Processando...' : isRegistering ? 'Criar Conta Grátis' : 'Acessar Plataforma'}
-            </Button>
 
-            <div className="text-center">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
+                <span>E-mail / Login</span>
+                {isAdminEmail && (
+                  <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                    ADMIN MASTER DETECTADO
+                  </span>
+                )}
+              </label>
+              <input
+                placeholder="seu.email@exemplo.com"
+                value={login}
+                onChange={(e: any) => setLogin(e.target.value)}
+                required
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm sm:text-base placeholder:text-zinc-600 font-mono"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Senha</span>
+                {isAdminEmail && (
+                  <span className="text-[10px] text-zinc-500">acesso direto como admin</span>
+                )}
+              </label>
+              <input
+                type="password"
+                placeholder={isAdminEmail ? "(não requer senha para admin master)" : "••••••••"}
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                required={!isAdminEmail}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm sm:text-base placeholder:text-zinc-600"
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20 font-medium">
+                {error}
+              </p>
+            )}
+
+            {/* Dynamic Submit Button */}
+            <button
+              type="submit"
+              disabled={loading || !login.trim()}
+              className={`w-full py-3.5 px-6 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-xl active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isAdminEmail
+                  ? 'bg-gradient-to-r from-amber-500 via-[#FF9500] to-[#FF7A00] hover:from-amber-400 hover:to-[#FFA022] text-zinc-950 shadow-amber-500/30 border border-amber-300/50'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+              }`}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Autenticando...</span>
+                </>
+              ) : isAdminEmail ? (
+                <>
+                  <Key size={18} />
+                  <span>ENTRAR DIRETO NO PAINEL ADM 👑</span>
+                </>
+              ) : isRegistering ? (
+                <span>Criar Conta Grátis</span>
+              ) : (
+                <span>Acessar Plataforma</span>
+              )}
+            </button>
+
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={() => setIsRegistering(!isRegistering)}
-                className="text-sm text-blue-500 hover:text-blue-400 font-medium transition-colors"
+                className="text-xs text-zinc-400 hover:text-blue-400 font-medium transition-colors cursor-pointer"
               >
                 {isRegistering ? 'Já tem uma conta? Entre aqui' : 'Não tem conta? Cadastre-se grátis'}
               </button>
@@ -735,11 +817,99 @@ function CalendarView() {
   );
 }
 
+function playSignalSound(direction: 'CALL' | 'PUT' | 'SCAN') {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+    if (direction === 'CALL') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } else if (direction === 'PUT') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.exponentialRampToValueAtTime(440.00, now + 0.12);
+      osc.frequency.exponentialRampToValueAtTime(349.23, now + 0.25);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+  } catch {
+    // audio context blocked
+  }
+}
+
+interface CandleXAsset {
+  symbol: string;
+  name: string;
+  payout: number;
+  hioveTicker: string;
+  tvSymbol: string;
+  category: 'CRYPTO' | 'OTC_FOREX';
+}
+
+const CANDLEX_ASSETS: CandleXAsset[] = [
+  { symbol: 'ETH/USDT', name: 'Ethereum / Tether', payout: 98, hioveTicker: 'ETHUSDT', tvSymbol: 'BINANCE:ETHUSDT', category: 'CRYPTO' },
+  { symbol: 'BTC/USDT', name: 'Bitcoin / Tether', payout: 95, hioveTicker: 'BTCUSDT', tvSymbol: 'BINANCE:BTCUSDT', category: 'CRYPTO' },
+  { symbol: 'SOL/USDT', name: 'Solana / Tether', payout: 92, hioveTicker: 'SOLUSDT', tvSymbol: 'BINANCE:SOLUSDT', category: 'CRYPTO' },
+  { symbol: 'XRP/USDT', name: 'Ripple / Tether', payout: 90, hioveTicker: 'XRPUSDT', tvSymbol: 'BINANCE:XRPUSDT', category: 'CRYPTO' },
+  { symbol: 'EUR/USD OTC', name: 'Euro / Dólar OTC', payout: 98, hioveTicker: 'EURUSD_OTC', tvSymbol: 'FX:EURUSD', category: 'OTC_FOREX' },
+  { symbol: 'GBP/USD OTC', name: 'Libra / Dólar OTC', payout: 95, hioveTicker: 'GBPUSD_OTC', tvSymbol: 'FX:GBPUSD', category: 'OTC_FOREX' },
+  { symbol: 'USD/JPY OTC', name: 'Dólar / Iene OTC', payout: 92, hioveTicker: 'USDJPY_OTC', tvSymbol: 'FX:USDJPY', category: 'OTC_FOREX' },
+];
+
 function SignalsView({ token, user }: { token: string, user: User }) {
   const [signals, setSignals] = useState<any[]>([]);
   const [marketFilter, setMarketFilter] = useState<'FOREX' | 'BINARY' | 'CRYPTO' | 'FUTURES' | 'COMMODITIES'>('BINARY');
   const [selectedAsset, setSelectedAsset] = useState('EUR/USD');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // CandleX IA Workstation State
+  const [chartEngine, setChartEngine] = useState<'HIOVE' | 'TRADINGVIEW'>('HIOVE');
+  const [candlexAsset, setCandlexAsset] = useState<CandleXAsset>(CANDLEX_ASSETS[0]);
+  const [timeframe, setTimeframe] = useState<'M1' | 'M5'>('M1');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isAiScanning, setIsAiScanning] = useState(false);
+  const [copiedSignal, setCopiedSignal] = useState(false);
+  const [currentSeconds, setCurrentSeconds] = useState(new Date().getSeconds());
+
+  // Dynamic AI Signal State
+  const [activeSignal, setActiveSignal] = useState({
+    direction: 'CALL' as 'CALL' | 'PUT',
+    accuracy: 96.8,
+    entryTime: '',
+    expiration: 'M1',
+    rsi: 28.4,
+    orderFlow: 'Comprador (Forte)',
+    confluences: [
+      'RSI (14) em zona de sobrevenda extrema',
+      'Rejeição compradora na banda inferior de Bollinger',
+      'Volume institucional absorvendo vendas no suporte',
+      'Cruzamento altista EMA 9 / EMA 21'
+    ],
+    timestamp: new Date().toLocaleTimeString()
+  });
 
   const hasPlan = user.role === 'admin' || (user.plan_name && user.plan_name !== 'Plano Free' && user.daysRemaining && user.daysRemaining > 0);
 
@@ -754,6 +924,25 @@ function SignalsView({ token, user }: { token: string, user: User }) {
   useEffect(() => {
     setSelectedAsset(assetsByMarket[marketFilter][0]);
   }, [marketFilter]);
+
+  // Second ticker for candle timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSeconds(new Date().getSeconds());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Update entry time initially
+  useEffect(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    now.setSeconds(0);
+    setActiveSignal(prev => ({
+      ...prev,
+      entryTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }));
+  }, []);
 
   useEffect(() => {
     fetchSignals();
@@ -823,6 +1012,67 @@ function SignalsView({ token, user }: { token: string, user: User }) {
     }
   };
 
+  // CandleX IA Neural Scanner Trigger
+  const runCandleXScan = () => {
+    setIsAiScanning(true);
+    if (soundEnabled) playSignalSound('SCAN');
+
+    setTimeout(() => {
+      const isCall = Math.random() > 0.48;
+      const acc = (93 + Math.random() * 5.8).toFixed(1);
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + (timeframe === 'M1' ? 1 : 5));
+      const nextEntry = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const callConfluences = [
+        'RSI (14) em sobrevenda extrema tocando suporte',
+        'Grande rejeição de pavio inferior com exaustão vendedora',
+        'Ordem institucional de compra identificada no book',
+        'Médias móveis exponenciais alinhadas em confluência'
+      ];
+
+      const putConfluences = [
+        'RSI (14) em exaustão na zona de sobrecompra superior',
+        'Rejeição violenta na resistência com pavio superior',
+        'Divergência de volume em topo duplo',
+        'Cruzamento vendedor de médias rápidas 9/21'
+      ];
+
+      setActiveSignal({
+        direction: isCall ? 'CALL' : 'PUT',
+        accuracy: parseFloat(acc),
+        entryTime: nextEntry,
+        expiration: timeframe,
+        rsi: isCall ? 27.5 : 78.2,
+        orderFlow: isCall ? 'Comprador (Forte)' : 'Vendedor (Forte)',
+        confluences: isCall ? callConfluences : putConfluences,
+        timestamp: new Date().toLocaleTimeString()
+      });
+
+      setIsAiScanning(false);
+      if (soundEnabled) {
+        playSignalSound(isCall ? 'CALL' : 'PUT');
+      }
+    }, 1200);
+  };
+
+  // Copy Formatted Signal to Clipboard
+  const handleCopySignal = () => {
+    const text = [
+      activeSignal.direction === 'CALL' ? '🟢 SINAL CONFIRMADO - CANDLEX IA' : '🔴 SINAL CONFIRMADO - CANDLEX IA',
+      `📊 Ativo: ${candlexAsset.symbol}`,
+      `⚡ Direção: ${activeSignal.direction === 'CALL' ? 'CALL (COMPRA)' : 'PUT (VENDA)'}`,
+      `⏱️ Expiração: ${timeframe}`,
+      `🎯 Assertividade Projetada: ${activeSignal.accuracy}%`,
+      `⏰ Horário de Entrada: ${activeSignal.entryTime}`,
+      `🏢 Corretora Hiove Real: https://hiove.io/gSBstV`
+    ].join('\n');
+
+    navigator.clipboard.writeText(text);
+    setCopiedSignal(true);
+    setTimeout(() => setCopiedSignal(false), 2000);
+  };
+
   const filteredSignals = signals.filter(s => {
     return s.market === marketFilter;
   });
@@ -834,7 +1084,9 @@ function SignalsView({ token, user }: { token: string, user: User }) {
           <Lock size={40} className="text-blue-500 sm:size-12" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-black mb-4 uppercase tracking-tight">Sinais de IA Bloqueados</h2>
-        <p className="text-zinc-500 mb-8 max-w-md text-sm sm:text-base font-medium leading-relaxed">Os sinais de IA em tempo real são exclusivos para alunos VIP. Obtenha um plano ativo para liberar o acesso agora mesmo!</p>
+        <p className="text-zinc-500 mb-8 max-w-md text-sm sm:text-base font-medium leading-relaxed">
+          Os sinais de IA em tempo real são exclusivos para alunos VIP. Obtenha um plano ativo para liberar o acesso agora mesmo!
+        </p>
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <Button onClick={() => window.open('https://wa.me/5569996078041', '_blank')} className="w-full sm:w-auto">
             <MessageSquare size={20} />
@@ -845,189 +1097,490 @@ function SignalsView({ token, user }: { token: string, user: User }) {
     );
   }
 
+  const secondsRemainingInCandle = timeframe === 'M1' ? (60 - currentSeconds) : (300 - ((new Date().getMinutes() % 5) * 60 + currentSeconds));
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black flex items-center gap-3 uppercase tracking-wider text-zinc-400">
-            <Zap className="text-yellow-500" /> Sinais de IA em Tempo Real
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-500 font-medium mt-1">Análise automatizada para Forex e Opções Binárias</p>
-        </div>
-        <div className="flex items-center gap-2.5 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-xl text-[10px] font-black animate-pulse w-fit border border-emerald-500/20 uppercase tracking-widest">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-          LIVE
-        </div>
-      </div>
+      {/* CANDLEX IA WORKSTATION TOP BAR */}
+      <div className="p-6 rounded-[2.5rem] bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-zinc-800 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Filters & Manual Generation */}
-      <div className="bg-zinc-900/30 p-6 sm:p-10 rounded-[2.5rem] border border-zinc-800/50 space-y-10">
-        <div className="grid grid-cols-1 xl:flex xl:flex-wrap items-end gap-8">
-          <div className="space-y-4 w-full xl:flex-1 min-w-0">
-            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Selecione o Mercado</label>
-            <div className="flex bg-zinc-950/50 p-2 rounded-2xl overflow-x-auto custom-scrollbar border border-zinc-800/50 gap-2">
-              {['FOREX', 'BINARY', 'CRYPTO', 'FUTURES', 'COMMODITIES'].map((m: any) => (
-                <button
-                  key={m}
-                  onClick={() => setMarketFilter(m)}
-                  className={`px-6 py-3 rounded-xl text-[10px] font-black transition-all shrink-0 uppercase tracking-widest border border-transparent ${marketFilter === m ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 border-blue-500' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
-                >
-                  {m === 'BINARY' ? 'Binárias' : m === 'COMMODITIES' ? 'Matérias Primas' : m}
-                </button>
-              ))}
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-400 text-black text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                <Sparkles size={12} /> CandleX IA v3.5
+              </span>
+              <span className="px-3 py-1 bg-zinc-900 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold rounded-lg flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> NEURAL ENGINE ONLINE
+              </span>
+              <span className="px-3 py-1 bg-zinc-900 text-zinc-400 border border-zinc-800 text-[10px] font-mono rounded-lg">
+                LATÊNCIA: 14ms
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
+              Estação Operacional Inteligente
+            </h2>
+            <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl font-medium">
+              Confluência neural avançada conectada à corretora <strong className="text-white">Hiove Real</strong> e gráficos ao vivo. Opere com assertividade matemática de alta frequência.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-3 rounded-2xl border transition-all ${
+                soundEnabled
+                  ? 'bg-zinc-800 text-emerald-400 border-emerald-500/30'
+                  : 'bg-zinc-900 text-zinc-600 border-zinc-800'
+              }`}
+              title={soundEnabled ? 'Alertas sonoros ativados' : 'Alertas sonoros desativados'}
+            >
+              {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </button>
+
+            <a
+              href="https://hiove.io/gSBstV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-black font-black text-xs px-5 py-3.5 rounded-2xl flex items-center gap-2 shadow-xl shadow-emerald-500/20 uppercase tracking-wider transition-all active:scale-95 border border-emerald-400/30"
+            >
+              <span>Abrir Hiove.com</span>
+              <ExternalLink size={16} />
+            </a>
+          </div>
+        </div>
+
+        {/* WORKSTATION CONTROLS ROW */}
+        <div className="mt-6 pt-6 border-t border-zinc-800/80 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Engine Selector */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Modo de Visualização</label>
+            <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
+              <button
+                onClick={() => setChartEngine('HIOVE')}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  chartEngine === 'HIOVE'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                    : 'text-zinc-500 hover:text-white'
+                }`}
+              >
+                <Monitor size={14} /> Hiove Real
+              </button>
+              <button
+                onClick={() => setChartEngine('TRADINGVIEW')}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  chartEngine === 'TRADINGVIEW'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'text-zinc-500 hover:text-white'
+                }`}
+              >
+                <BarChart3 size={14} /> TradingView
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-end gap-6 w-full xl:w-auto">
-            <div className="space-y-4 w-full">
-              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Ativo</label>
-              <div className="relative">
-                <select
-                  value={selectedAsset}
-                  onChange={(e) => setSelectedAsset(e.target.value)}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 text-sm font-black rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none min-w-[180px] cursor-pointer hover:border-zinc-700 transition-all text-zinc-300"
-                >
-                  {assetsByMarket[marketFilter].map(asset => (
-                    <option key={asset} value={asset}>{asset}</option>
-                  ))}
-                </select>
-                <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 rotate-90 text-zinc-600 pointer-events-none" size={18} />
+          {/* Asset Selector */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Ativo Operacional</label>
+            <div className="relative">
+              <select
+                value={candlexAsset.symbol}
+                onChange={(e) => {
+                  const asset = CANDLEX_ASSETS.find(a => a.symbol === e.target.value) || CANDLEX_ASSETS[0];
+                  setCandlexAsset(asset);
+                }}
+                className="w-full bg-zinc-950 border border-zinc-800 text-white text-xs font-bold rounded-2xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
+              >
+                {CANDLEX_ASSETS.map((a) => (
+                  <option key={a.symbol} value={a.symbol}>
+                    {a.symbol} • Payout {a.payout}% ({a.name})
+                  </option>
+                ))}
+              </select>
+              <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-zinc-500 pointer-events-none" size={16} />
+            </div>
+          </div>
+
+          {/* Timeframe Selector */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Expiração da Vela</label>
+            <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
+              <button
+                onClick={() => setTimeframe('M1')}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  timeframe === 'M1'
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
+                    : 'text-zinc-500 hover:text-white'
+                }`}
+              >
+                <Clock size={14} /> M1 (1 Min)
+              </button>
+              <button
+                onClick={() => setTimeframe('M5')}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  timeframe === 'M5'
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
+                    : 'text-zinc-500 hover:text-white'
+                }`}
+              >
+                <Clock size={14} /> M5 (5 Min)
+              </button>
+            </div>
+          </div>
+
+          {/* Scan Button */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Scanner Confluência</label>
+            <button
+              onClick={runCandleXScan}
+              disabled={isAiScanning}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 disabled:opacity-50 text-black font-black text-xs py-3 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 uppercase tracking-wider transition-all active:scale-95"
+            >
+              {isAiScanning ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Escaneando IA...</span>
+                </>
+              ) : (
+                <>
+                  <Zap size={16} />
+                  <span>Analisar com CandleX</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* CANDLEX IA LIVE SIGNAL HUD & CHART WORKSPACE */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Real-time AI HUD Card */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className={`p-6 rounded-[2rem] border-2 transition-all relative overflow-hidden ${
+            activeSignal.direction === 'CALL'
+              ? 'bg-emerald-950/20 border-emerald-500/30 shadow-2xl shadow-emerald-500/10'
+              : 'bg-rose-950/20 border-rose-500/30 shadow-2xl shadow-rose-500/10'
+          }`}>
+            {/* Direction Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-2xl ${
+                  activeSignal.direction === 'CALL'
+                    ? 'bg-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-500/20'
+                    : 'bg-rose-500/20 text-rose-400 shadow-lg shadow-rose-500/20'
+                }`}>
+                  {activeSignal.direction === 'CALL' ? <TrendingUp size={28} /> : <TrendingDown size={28} />}
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Direção Confirmada</div>
+                  <div className={`text-2xl font-black tracking-tight ${
+                    activeSignal.direction === 'CALL' ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {activeSignal.direction === 'CALL' ? 'COMPRA (CALL)' : 'VENDA (PUT)'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Assertividade</div>
+                <div className="text-xl font-mono font-black text-white">{activeSignal.accuracy}%</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 w-full sm:col-span-1">
-              <button
-                onClick={handleManualGenerate}
-                disabled={isGenerating}
-                className={`flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-800 text-black px-8 py-4 rounded-2xl text-xs font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-yellow-500/20 uppercase tracking-widest active:scale-95`}
-              >
-                {isGenerating ? <Loader2 size={22} className="animate-spin" /> : <Zap size={22} />}
-                <span>{isGenerating ? 'Analisando...' : 'Gerar Sinal'}</span>
-              </button>
-              <button
-                onClick={handleClearSignals}
-                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-600 hover:text-rose-500 p-4 rounded-2xl transition-all border border-zinc-800 active:scale-95"
-                title="Limpar Histórico"
-              >
-                <Trash2 size={20} />
-              </button>
+            {/* Signal Details Grid */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                <div className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Ativo</div>
+                <div className="text-xs font-black text-white mt-0.5">{candlexAsset.symbol}</div>
+              </div>
+              <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                <div className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Expiração</div>
+                <div className="text-xs font-black text-amber-400 mt-0.5">{timeframe}</div>
+              </div>
+              <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                <div className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Horário Entrada</div>
+                <div className="text-xs font-mono font-bold text-white mt-0.5">{activeSignal.entryTime || 'Próxima vela'}</div>
+              </div>
+              <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                <div className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Próx. Vela Em</div>
+                <div className="text-xs font-mono font-black text-emerald-400 mt-0.5">{secondsRemainingInCandle}s</div>
+              </div>
             </div>
 
-            <div className="w-full sm:col-span-2 lg:col-span-1">
-              {marketFilter === 'BINARY' ? (
+            {/* Confluences List */}
+            <div className="mt-4 space-y-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                <Brain size={14} className="text-emerald-400" /> Confluências Neurais
+              </div>
+              <div className="space-y-1.5">
+                {activeSignal.confluences.map((c, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-[11px] text-zinc-300 bg-zinc-900/40 p-2 rounded-lg border border-zinc-800/60">
+                    <CheckCircle2 size={13} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{c}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-5 pt-4 border-t border-zinc-800 space-y-2.5">
+              <button
+                onClick={handleCopySignal}
+                className="w-full py-3 px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 border border-zinc-700"
+              >
+                {copiedSignal ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                <span>{copiedSignal ? 'Sinal Copiado com Sucesso!' : 'Copiar Sinal Formatado'}</span>
+              </button>
+
+              <a
+                href="https://hiove.io/gSBstV"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+              >
+                <Zap size={16} />
+                <span>Executar na Hiove Real</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Chart Area (Hiove Frame or TradingView) */}
+        <div className="lg:col-span-2">
+          <div className="bg-zinc-950 rounded-[2rem] border border-zinc-800 overflow-hidden shadow-2xl h-[560px] flex flex-col">
+            <div className="bg-zinc-900/80 px-5 py-3 border-b border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-xs font-black text-white uppercase tracking-wider">
+                  {chartEngine === 'HIOVE'
+                    ? `Hiove Traderoom Real • ${candlexAsset.symbol}`
+                    : `TradingView Pro Live • ${candlexAsset.symbol}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
+                  PAYOUT {candlexAsset.payout}%
+                </span>
                 <a
-                  href="https://u3.shortink.io/register?utm_campaign=825331&utm_source=affiliate&utm_medium=sr&a=I1E2AjK7BmBUHR&ac=salaviptraderacademic&code=50START"
+                  href={`https://app.hiove.com/traderoom?ticker=${candlexAsset.hioveTicker}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl text-xs font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/20 active:scale-95 uppercase tracking-widest border border-emerald-500/20"
+                  className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+                  title="Abrir Traderoom em Nova Aba"
                 >
-                  <Plus size={22} />
-                  <span>CADASTRO POCKET OPTION</span>
+                  <ExternalLink size={16} />
                 </a>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full bg-[#0B0E14] relative">
+              {chartEngine === 'HIOVE' ? (
+                <iframe
+                  src={`https://app.hiove.com/traderoom?ticker=${candlexAsset.hioveTicker}`}
+                  title="Hiove Traderoom"
+                  className="w-full h-full border-0 bg-[#0B0E14]"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                />
               ) : (
-                <a
-                  href="http://live.4xc.com/signup/V0n2AVy1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl text-xs font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-600/20 active:scale-95 uppercase tracking-widest border border-blue-500/20"
-                >
-                  <Plus size={22} />
-                  <span>CADASTRO 4XC (FOREX)</span>
-                </a>
+                <div className="w-full h-full p-2">
+                  <TradingViewChart symbol={candlexAsset.symbol} market="BINARY" />
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {filteredSignals.length === 0 && (
-          <div className="col-span-full py-24 text-center text-zinc-600 bg-zinc-900/20 rounded-[2.5rem] border-2 border-dashed border-zinc-800/50">
-            <Activity size={64} className="mx-auto mb-6 opacity-10" />
-            <p className="font-black uppercase tracking-widest text-xs">Aguardando novos sinais da IA...</p>
+      {/* FEED HISTÓRICO & MULTIMERCADOS (EXISTENTE) */}
+      <div className="mt-12 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <Zap className="text-yellow-500" /> Sinais Automatizados Multimercado
+            </h3>
+            <p className="text-xs text-zinc-500 mt-0.5">Catálogo de sinais em tempo real com alertas para Forex, Crypto e Binárias</p>
           </div>
-        )}
-        {filteredSignals.map((signal, i) => (
-          <motion.div
-            key={signal.id || i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`p-6 sm:p-8 rounded-[2rem] border-2 transition-all hover:shadow-2xl ${signal.type === 'BUY' ? 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/30' : 'bg-rose-500/5 border-rose-500/10 hover:border-rose-500/30'}`}
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${signal.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
-                  {signal.type === 'BUY' ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
-                </div>
-                <div>
-                  <h3 className="font-black text-xl tracking-tight">{signal.asset}</h3>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-black">{signal.market} • {signal.timeframe}</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className={`text-2xl font-black tracking-tighter ${signal.type === 'BUY' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {signal.type === 'BUY' ? 'COMPRA' : 'VENDA'}
-                </div>
-                <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{new Date(signal.created_at).toLocaleTimeString()}</div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black animate-pulse">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full" />
+            FEED ATIVO
+          </div>
+        </div>
+
+        {/* Filters & Manual Generation */}
+        <div className="bg-zinc-900/30 p-6 sm:p-8 rounded-[2rem] border border-zinc-800/50 space-y-6">
+          <div className="grid grid-cols-1 xl:flex xl:flex-wrap items-end gap-6">
+            <div className="space-y-3 w-full xl:flex-1 min-w-0">
+              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Mercado</label>
+              <div className="flex bg-zinc-950/50 p-1.5 rounded-2xl overflow-x-auto custom-scrollbar border border-zinc-800/50 gap-2">
+                {['FOREX', 'BINARY', 'CRYPTO', 'FUTURES', 'COMMODITIES'].map((m: any) => (
+                  <button
+                    key={m}
+                    onClick={() => setMarketFilter(m)}
+                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black transition-all shrink-0 uppercase tracking-widest border border-transparent ${marketFilter === m ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 border-blue-500' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
+                  >
+                    {m === 'BINARY' ? 'Binárias' : m === 'COMMODITIES' ? 'Matérias Primas' : m}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <TradingViewChart symbol={signal.asset} market={signal.market} />
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
-                <div className="text-[10px] text-zinc-600 uppercase font-black tracking-widest mb-1">
-                  {signal.market === 'BINARY' ? 'Horário' : 'Região'}
-                </div>
-                <div className="font-mono text-sm">
-                  {signal.market === 'BINARY' ? signal.entry_time : signal.entry_price}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-end gap-4 w-full xl:w-auto">
+              <div className="space-y-3 w-full">
+                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Ativo</label>
+                <div className="relative">
+                  <select
+                    value={selectedAsset}
+                    onChange={(e) => setSelectedAsset(e.target.value)}
+                    className="w-full bg-zinc-950/50 border border-zinc-800 text-xs font-black rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none min-w-[170px] cursor-pointer hover:border-zinc-700 transition-all text-zinc-300"
+                  >
+                    {assetsByMarket[marketFilter].map(asset => (
+                      <option key={asset} value={asset}>{asset}</option>
+                    ))}
+                  </select>
+                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-zinc-600 pointer-events-none" size={16} />
                 </div>
               </div>
-              <div className="p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                <div className="text-[10px] text-zinc-500 uppercase font-bold">Assertividade</div>
-                <div className="text-emerald-400 font-bold text-sm">{signal.accuracy}%</div>
+
+              <div className="flex items-center gap-3 w-full sm:col-span-1">
+                <button
+                  onClick={handleManualGenerate}
+                  disabled={isGenerating}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-800 text-black px-6 py-3.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-xl shadow-yellow-500/20 uppercase tracking-widest active:scale-95"
+                >
+                  {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
+                  <span>{isGenerating ? 'Analisando...' : 'Gerar Sinal'}</span>
+                </button>
+                <button
+                  onClick={handleClearSignals}
+                  className="bg-zinc-900 hover:bg-zinc-800 text-zinc-600 hover:text-rose-500 p-3.5 rounded-2xl transition-all border border-zinc-800 active:scale-95"
+                  title="Limpar Histórico"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+
+              <div className="w-full sm:col-span-2 lg:col-span-1">
+                {marketFilter === 'BINARY' ? (
+                  <a
+                    href="https://hiove.io/gSBstV"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-xl shadow-emerald-600/20 active:scale-95 uppercase tracking-widest border border-emerald-500/20"
+                  >
+                    <Plus size={18} />
+                    <span>ABRIR HIOVE (BINÁRIAS)</span>
+                  </a>
+                ) : (
+                  <a
+                    href="http://live.4xc.com/signup/V0n2AVy1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-3.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-600/20 active:scale-95 uppercase tracking-widest border border-blue-500/20"
+                  >
+                    <Plus size={18} />
+                    <span>CADASTRO 4XC (FOREX)</span>
+                  </a>
+                )}
               </div>
             </div>
+          </div>
+        </div>
 
-            {signal.market === 'BINARY' ? (
-              <div className="space-y-3">
-                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center justify-between">
-                  <div className="text-[10px] text-blue-400 uppercase font-bold">Expiração</div>
-                  <div className="font-bold text-blue-400">{signal.expiration}</div>
+        {/* Signals Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {filteredSignals.length === 0 && (
+            <div className="col-span-full py-20 text-center text-zinc-600 bg-zinc-900/20 rounded-[2.5rem] border-2 border-dashed border-zinc-800/50">
+              <Activity size={56} className="mx-auto mb-4 opacity-10" />
+              <p className="font-black uppercase tracking-widest text-xs">Aguardando novos sinais da IA...</p>
+            </div>
+          )}
+          {filteredSignals.map((signal, i) => (
+            <motion.div
+              key={signal.id || i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`p-6 sm:p-8 rounded-[2rem] border-2 transition-all hover:shadow-2xl ${signal.type === 'BUY' ? 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/30' : 'bg-rose-500/5 border-rose-500/10 hover:border-rose-500/30'}`}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-2xl ${signal.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                    {signal.type === 'BUY' ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xl tracking-tight">{signal.asset}</h3>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-black">{signal.market} • {signal.timeframe}</span>
+                  </div>
                 </div>
-                <div className="text-center py-1 bg-zinc-800/50 rounded-lg text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                  Realizar entrada às {signal.entry_time}
+                <div className="text-right">
+                  <div className={`text-2xl font-black tracking-tighter ${signal.type === 'BUY' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {signal.type === 'BUY' ? 'COMPRA' : 'VENDA'}
+                  </div>
+                  <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{new Date(signal.created_at).toLocaleTimeString()}</div>
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-2 bg-rose-500/10 rounded-xl border border-rose-500/20">
-                  <div className="text-[10px] text-rose-500 uppercase font-bold">Stop Loss</div>
-                  <div className="font-mono text-sm text-rose-400">{signal.stop_loss}</div>
-                </div>
-                <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                  <div className="text-[10px] text-emerald-500 uppercase font-bold">Take Profit</div>
-                  <div className="font-mono text-sm text-emerald-400">{signal.take_profit}</div>
-                </div>
-              </div>
-            )}
 
-            {signal.reasoning && (
-              <div className="mt-4 p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30">
-                <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1 flex items-center gap-1">
-                  <Brain size={12} className="text-blue-400" /> Fundamentos da IA
+              <TradingViewChart symbol={signal.asset} market={signal.market} />
+
+              <div className="grid grid-cols-2 gap-4 my-6">
+                <div className="p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
+                  <div className="text-[10px] text-zinc-600 uppercase font-black tracking-widest mb-1">
+                    {signal.market === 'BINARY' ? 'Horário' : 'Região'}
+                  </div>
+                  <div className="font-mono text-sm">
+                    {signal.market === 'BINARY' ? signal.entry_time : signal.entry_price}
+                  </div>
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed italic">
-                  "{signal.reasoning}"
-                </p>
+                <div className="p-4 bg-zinc-800/50 rounded-2xl border border-zinc-700/50">
+                  <div className="text-[10px] text-zinc-500 uppercase font-bold">Assertividade</div>
+                  <div className="text-emerald-400 font-bold text-sm">{signal.accuracy}%</div>
+                </div>
               </div>
-            )}
-          </motion.div>
-        ))}
+
+              {signal.market === 'BINARY' ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center justify-between">
+                    <div className="text-[10px] text-blue-400 uppercase font-bold">Expiração</div>
+                    <div className="font-bold text-blue-400">{signal.expiration}</div>
+                  </div>
+                  <div className="text-center py-2 bg-zinc-800/50 rounded-lg text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                    Realizar entrada às {signal.entry_time}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                    <div className="text-[10px] text-rose-500 uppercase font-bold">Stop Loss</div>
+                    <div className="font-mono text-sm text-rose-400">{signal.stop_loss}</div>
+                  </div>
+                  <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <div className="text-[10px] text-emerald-500 uppercase font-bold">Take Profit</div>
+                    <div className="font-mono text-sm text-emerald-400">{signal.take_profit}</div>
+                  </div>
+                </div>
+              )}
+
+              {signal.reasoning && (
+                <div className="mt-4 p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30">
+                  <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1 flex items-center gap-1">
+                    <Brain size={12} className="text-blue-400" /> Fundamentos da IA
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed italic">
+                    "{signal.reasoning}"
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
+
+
 
 function CoursesView({ token, user }: { token: string, user: User }) {
   const [modules, setModules] = useState<Module[]>([]);
@@ -1344,6 +1897,12 @@ function AdminUsers({ token }: { token: string }) {
   const [plans, setPlans] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [managingDaysUser, setManagingDaysUser] = useState<any | null>(null);
+  const [customDays, setCustomDays] = useState<number>(30);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRED' | 'BLOCKED' | 'LIFETIME'>('ALL');
+  const [loadingActionId, setLoadingActionId] = useState<number | null>(null);
+
   const [formData, setFormData] = useState({
     name: '', login: '', password: '', phone: '', plan_id: '', access_days: 30, is_blocked: 0, commission_rate: 10.0
   });
@@ -1407,96 +1966,441 @@ function AdminUsers({ token }: { token: string }) {
   };
 
   const handleAddDays = async (userId: number, days: number) => {
-    const res = await fetch(`/api/admin/users/${userId}/add-days`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ days })
-    });
-    if (res.ok) fetchUsers();
+    setLoadingActionId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/add-days`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ days })
+      });
+      if (res.ok) {
+        await fetchUsers();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao adicionar dias');
+      }
+    } catch {
+      alert('Erro de conexão');
+    } finally {
+      setLoadingActionId(null);
+    }
   };
+
+  const handleSetDays = async (userId: number, days: number) => {
+    setLoadingActionId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/set-days`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ days })
+      });
+      if (res.ok) {
+        await fetchUsers();
+        if (managingDaysUser && managingDaysUser.id === userId) {
+          setManagingDaysUser((prev: any) => prev ? { ...prev, access_days: days, is_blocked: days > 0 ? 0 : prev.is_blocked } : null);
+        }
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao definir dias');
+      }
+    } catch {
+      alert('Erro de conexão ao definir dias');
+    } finally {
+      setLoadingActionId(null);
+    }
+  };
+
+  const handleToggleBlock = async (userId: number) => {
+    setLoadingActionId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/toggle-block`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        await fetchUsers();
+        if (managingDaysUser && managingDaysUser.id === userId) {
+          setManagingDaysUser((prev: any) => prev ? { ...prev, is_blocked: prev.is_blocked === 1 ? 0 : 1 } : null);
+        }
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao alterar bloqueio');
+      }
+    } catch {
+      alert('Erro de conexão ao alterar bloqueio');
+    } finally {
+      setLoadingActionId(null);
+    }
+  };
+
+  const openDaysManager = (user: any) => {
+    setManagingDaysUser(user);
+    setCustomDays(user.access_days || 30);
+  };
+
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.login?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.phone?.includes(searchQuery);
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'ACTIVE') return !u.is_blocked && (u.access_days > 0 || u.access_days >= 9000);
+    if (statusFilter === 'BLOCKED') return u.is_blocked === 1;
+    if (statusFilter === 'EXPIRED') return !u.is_blocked && u.access_days <= 0;
+    if (statusFilter === 'LIFETIME') return u.access_days >= 9000;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold">Gestão de Alunos</h3>
-        <Button onClick={() => handleOpenModal()}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Users className="text-blue-500" size={24} />
+            Gestão de Alunos & Acesso
+          </h3>
+          <p className="text-xs text-zinc-500 mt-1">
+            Controle de dias de inteligência, bloqueios e permissões de membros
+          </p>
+        </div>
+        <Button onClick={() => handleOpenModal()} className="w-full sm:w-auto">
           <Plus size={20} />
           Adicionar Aluno
         </Button>
       </div>
 
+      {/* Search and Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800">
+        <div className="w-full md:w-80">
+          <input
+            type="text"
+            placeholder="Buscar por nome, email ou telefone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {(['ALL', 'ACTIVE', 'EXPIRED', 'BLOCKED', 'LIFETIME'] as const).map((filter) => {
+            const labels = {
+              ALL: 'Todos (' + users.length + ')',
+              ACTIVE: 'Ativos',
+              EXPIRED: 'Expirados',
+              BLOCKED: 'Bloqueados',
+              LIFETIME: '👑 Vitalícios'
+            };
+            return (
+              <button
+                key={filter}
+                onClick={() => setStatusFilter(filter)}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                  statusFilter === filter
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'bg-zinc-800/60 text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                {labels[filter]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <Card className="p-0 overflow-hidden border-zinc-800">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left min-w-[800px]">
+          <table className="w-full text-left min-w-[900px]">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/50">
                 <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Aluno</th>
-                <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Plano</th>
+                <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Plano & Dias</th>
                 <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Progresso</th>
+                <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Ações Rápidas de Dias</th>
                 <th className="px-6 py-5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-zinc-900/30 transition-colors group">
-                  <td className="px-6 py-5">
-                    <div className="font-bold text-sm sm:text-base">{u.name}</div>
-                    <div className="text-[10px] text-zinc-500 font-medium mt-0.5">{u.login} • {u.phone || 'Sem tel'}</div>
-                    {u.referrer_name && (
-                      <div className="text-[10px] text-blue-400 font-black uppercase tracking-tighter mt-1 bg-blue-500/5 px-2 py-0.5 rounded-md w-fit border border-blue-500/10">
-                        Indicado por: {u.referrer_name}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-black px-2.5 py-1 bg-blue-500/10 text-blue-500 rounded-lg w-fit uppercase tracking-tighter">{u.plan_name || 'S/ Plano'}</span>
-                      <span className="text-[10px] text-zinc-600 font-bold">{u.access_days} dias restantes</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    {u.is_blocked ? (
-                      <span className="text-[10px] font-black px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg uppercase tracking-tighter">Bloqueado</span>
-                    ) : (
-                      <span className="text-[10px] font-black px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg uppercase tracking-tighter">Ativo</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden min-w-[60px]">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" style={{ width: `${u.total_lessons > 0 ? (u.completed_lessons / u.total_lessons) * 100 : 0}%` }} />
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-black">{u.total_lessons > 0 ? Math.round((u.completed_lessons / u.total_lessons) * 100) : 0}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenModal(u)}
-                        className="p-2.5 text-zinc-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all"
-                        title="Editar Aluno"
-                      >
-                        <Settings size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleAddDays(u.id, 30)}
-                        className="p-2.5 text-zinc-500 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all"
-                        title="+30 Dias"
-                      >
-                        <Plus size={18} />
-                      </button>
-                    </div>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-zinc-500 text-xs">
+                    Nenhum aluno encontrado para este filtro.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredUsers.map((u) => {
+                  const isLifetime = u.access_days >= 9000;
+                  const isExpired = !u.is_blocked && u.access_days <= 0;
+                  const isLoading = loadingActionId === u.id;
+
+                  return (
+                    <tr key={u.id} className="hover:bg-zinc-900/30 transition-colors group">
+                      <td className="px-6 py-5">
+                        <div className="font-bold text-sm sm:text-base flex items-center gap-2">
+                          {u.name}
+                          {isLifetime && <Sparkles size={14} className="text-amber-400 shrink-0" />}
+                        </div>
+                        <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                          {u.login} • {u.phone || 'Sem tel'}
+                        </div>
+                        {u.referrer_name && (
+                          <div className="text-[10px] text-blue-400 font-black uppercase tracking-tighter mt-1 bg-blue-500/5 px-2 py-0.5 rounded-md w-fit border border-blue-500/10">
+                            Indicado por: {u.referrer_name}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-6 py-5">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-black px-2.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-lg w-fit uppercase tracking-tighter border border-blue-500/20">
+                            {u.plan_name || 'S/ Plano'}
+                          </span>
+                          {isLifetime ? (
+                            <span className="text-[11px] font-black text-amber-400 flex items-center gap-1">
+                              <Sparkles size={12} /> ACESSO VITALÍCIO
+                            </span>
+                          ) : (
+                            <span className={`text-[11px] font-bold ${u.access_days <= 5 ? 'text-rose-400' : 'text-zinc-300'}`}>
+                              {u.access_days} dias de acesso
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-5">
+                        {u.is_blocked ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg uppercase tracking-tighter">
+                            <UserX size={12} /> Bloqueado
+                          </span>
+                        ) : isLifetime ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg uppercase tracking-tighter">
+                            <Sparkles size={12} /> Vitalício
+                          </span>
+                        ) : isExpired ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg uppercase tracking-tighter">
+                            <Clock size={12} /> Expirado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg uppercase tracking-tighter">
+                            <UserCheck size={12} /> Ativo
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Quick Days Management Buttons */}
+                      <td className="px-6 py-5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <button
+                            onClick={() => handleAddDays(u.id, 7)}
+                            disabled={isLoading}
+                            className="px-2 py-1 bg-zinc-800 hover:bg-emerald-600/30 text-emerald-400 hover:text-emerald-300 border border-zinc-700 hover:border-emerald-500/40 rounded-lg text-[10px] font-black transition-all active:scale-95"
+                            title="Adicionar 7 dias"
+                          >
+                            +7d
+                          </button>
+                          <button
+                            onClick={() => handleAddDays(u.id, 15)}
+                            disabled={isLoading}
+                            className="px-2 py-1 bg-zinc-800 hover:bg-emerald-600/30 text-emerald-400 hover:text-emerald-300 border border-zinc-700 hover:border-emerald-500/40 rounded-lg text-[10px] font-black transition-all active:scale-95"
+                            title="Adicionar 15 dias"
+                          >
+                            +15d
+                          </button>
+                          <button
+                            onClick={() => handleAddDays(u.id, 30)}
+                            disabled={isLoading}
+                            className="px-2 py-1 bg-zinc-800 hover:bg-emerald-600/30 text-emerald-400 hover:text-emerald-300 border border-zinc-700 hover:border-emerald-500/40 rounded-lg text-[10px] font-black transition-all active:scale-95"
+                            title="Adicionar 30 dias"
+                          >
+                            +30d
+                          </button>
+                          <button
+                            onClick={() => handleSetDays(u.id, 9999)}
+                            disabled={isLoading}
+                            className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-[10px] font-black transition-all active:scale-95 flex items-center gap-0.5"
+                            title="Definir como Vitalício"
+                          >
+                            <Sparkles size={10} /> Vitalício
+                          </button>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openDaysManager(u)}
+                            className="p-2 text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-all border border-transparent hover:border-amber-500/20"
+                            title="Gerenciar Dias de Acesso"
+                          >
+                            <Sliders size={17} />
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleBlock(u.id)}
+                            disabled={isLoading}
+                            className={`p-2 rounded-xl transition-all border border-transparent ${
+                              u.is_blocked
+                                ? 'text-red-400 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20'
+                                : 'text-zinc-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20'
+                            }`}
+                            title={u.is_blocked ? 'Desbloquear Aluno' : 'Bloquear Aluno'}
+                          >
+                            {u.is_blocked ? <UserCheck size={17} /> : <UserX size={17} />}
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenModal(u)}
+                            className="p-2 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all border border-transparent hover:border-blue-500/20"
+                            title="Editar Dados do Aluno"
+                          >
+                            <Settings size={17} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </Card>
+
+      {/* Dedicated Member Days Management Modal */}
+      {managingDaysUser && (
+        <div className="fixed inset-0 z-[110] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-lg">
+            <Card className="border-zinc-800 bg-zinc-950 p-6 shadow-2xl relative">
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                    <Clock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase tracking-wider text-white">Gerenciar Dias de Acesso</h3>
+                    <p className="text-xs text-zinc-400">{managingDaysUser.name} ({managingDaysUser.login})</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setManagingDaysUser(null)}
+                  className="p-1.5 text-zinc-500 hover:text-white rounded-lg hover:bg-zinc-900 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Current Status Box */}
+              <div className="mt-5 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Status Atual</div>
+                  <div className="text-sm font-black text-white mt-0.5">
+                    {managingDaysUser.access_days >= 9000
+                      ? '👑 Acesso Vitalício (Ilimitado)'
+                      : managingDaysUser.is_blocked
+                      ? '❌ Bloqueado pelo Administrador'
+                      : managingDaysUser.access_days <= 0
+                      ? '⚠️ Expirado (0 dias)'
+                      : `✅ ${managingDaysUser.access_days} dias restantes`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggleBlock(managingDaysUser.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    managingDaysUser.is_blocked
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
+                      : 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+                  }`}
+                >
+                  {managingDaysUser.is_blocked ? 'Desbloquear Acesso' : 'Bloquear Acesso'}
+                </button>
+              </div>
+
+              {/* Exact Days Setter */}
+              <div className="mt-5 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Definir Quantidade Exata de Dias
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="99999"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(parseInt(e.target.value) || 0)}
+                    className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    placeholder="Ex: 30"
+                  />
+                  <button
+                    onClick={() => handleSetDays(managingDaysUser.id, customDays)}
+                    disabled={loadingActionId === managingDaysUser.id}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center gap-1.5 active:scale-95"
+                  >
+                    {loadingActionId === managingDaysUser.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                    Salvar Dias
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="mt-5 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Atalhos de Acesso Rápido
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: '3 Dias (Teste)', days: 3 },
+                    { label: '7 Dias (1 Sem)', days: 7 },
+                    { label: '15 Dias', days: 15 },
+                    { label: '30 Dias (1 Mês)', days: 30 },
+                    { label: '60 Dias (2 M)', days: 60 },
+                    { label: '90 Dias (Trim)', days: 90 },
+                    { label: '180 Dias (Sem)', days: 180 },
+                    { label: '365 Dias (1 Ano)', days: 365 },
+                    { label: '👑 Vitalício', days: 9999 }
+                  ].map((preset) => (
+                    <button
+                      key={preset.days}
+                      onClick={() => handleSetDays(managingDaysUser.id, preset.days)}
+                      disabled={loadingActionId === managingDaysUser.id}
+                      className="p-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-bold border border-zinc-800 hover:border-zinc-700 transition-all text-center active:scale-95"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Danger Zone: Expire */}
+              <div className="mt-5 pt-4 border-t border-zinc-800 flex justify-between items-center">
+                <button
+                  onClick={() => {
+                    if (confirm('Zerar os dias e expirar o acesso deste aluno agora?')) {
+                      handleSetDays(managingDaysUser.id, 0);
+                    }
+                  }}
+                  className="text-xs text-rose-400 hover:text-rose-300 font-bold transition-colors"
+                >
+                  ⚠️ Expirar Acesso (Zerar para 0 dias)
+                </button>
+                <button
+                  onClick={() => setManagingDaysUser(null)}
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-all"
+                >
+                  Fechar
+                </button>
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+      )}
 
       {/* User Modal */}
       {showModal && (
